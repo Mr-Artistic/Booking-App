@@ -8,3 +8,5 @@ App Features:
 3. Submit a new booking request for a conference room.
 4. Receive an automated confirmation email after the booking.
 5. The system prevents overlapping bookings for the same room.
+
+Developed using Streamlit.
