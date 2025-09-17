@@ -529,8 +529,9 @@ def render_header_bar(
             justify-content: space-between;
             align-items: center;
             background-color: {bg_color};
-            padding: 8px 8px;
+            padding: 6px 8px;
             border-radius: 8px;
+            margin: -70px 0 10px 0;
             margin-bottom: 10px;
         ">
             <h1 style="margin: 0; color: black; font-size: 28px;">{title}</h1>

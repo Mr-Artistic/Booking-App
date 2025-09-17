@@ -1,6 +1,5 @@
 import streamlit as st
 from datetime import datetime, date, timedelta
-from dateutil.relativedelta import relativedelta
 
 DB_NAME = "bookings.db"
 

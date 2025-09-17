@@ -60,9 +60,7 @@ if not authentication_status:
         st.error("Username/password is incorrect")
     else:
 
-        st_red_alert(
-            "Please enter your username and password to access the Booking App."
-        )
+        st_red_alert("Please login to access the Booking App (check sidebar).")
     st.stop()
 
 authenticator.logout(location="sidebar")
@@ -73,8 +71,6 @@ authenticator.logout(location="sidebar")
 
 # region Chapter 4: Header
 
-if "_flash" in st.session_state:
-    st.success(st.session_state.pop("_flash"))
 
 render_header_bar(
     "Conference Room Booking Dashboard",
@@ -161,5 +157,7 @@ with left_col:
 # Right Column: Booking Form
 with right_col:
     booking_form()
+    if "_flash" in st.session_state:
+        st.success(st.session_state.pop("_flash"))
 
 # endregion
