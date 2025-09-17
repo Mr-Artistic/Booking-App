@@ -1,13 +1,18 @@
 import streamlit as st
-from datetime import date
+from datetime import datetime, date, timedelta
 from dateutil.relativedelta import relativedelta
 
 DB_NAME = "bookings.db"
 
 # Timeline window (last month, this month, next month)
 TODAY = date.today()
-TIMELINE_START = TODAY.replace(day=1) - relativedelta(months=1)
-TIMELINE_END = TODAY.replace(day=1) + relativedelta(months=2)
+_NOW = datetime.now()
+TIMELINE_START = (_NOW - timedelta(days=7)).replace(
+    hour=0, minute=0, second=0, microsecond=0
+)
+TIMELINE_END = (_NOW + timedelta(days=21)).replace(
+    hour=0, minute=0, second=0, microsecond=0
+)
 
 # Visual Styles
 GRAPH_HEIGHT = 300

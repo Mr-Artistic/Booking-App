@@ -104,7 +104,7 @@ with left_col:
 
     # Bordered container for the graph
     with st.container(border=True):
-        st.write("📊 Current Bookings Timeline (Day vs Time)")
+        st.write("📊 Current Bookings Timeline (Date & Time)")
         fig, info = build_vertical_day_time_timeline(df)
 
         if fig is not None:

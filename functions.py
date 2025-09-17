@@ -547,7 +547,12 @@ def render_header_bar(
 # region Chapter 11: Plotting function
 def build_vertical_day_time_timeline(df: pd.DataFrame, default_color="#E53935"):
     """
-    Simplified plot builder. Expects get_bookings() style dataframe where start_time/end_time are strings 'HH:MM:SS'.
+    Timeline builder. Expects get_bookings() style dataframe where start_time/end_time are strings 'HH:MM:SS'.
+
+    Features:
+    - 4-week window from cfg.TIMELINE_START to cfg.TIMELINE_END (datetime at midnight)
+    - one tick per day (dtick = 24h) aligned to start_window (tick0)
+    - grouped bars (# offsetgroup + barmode='group') to avoid overlap
     """
     if df is None or df.empty:
         return None, {"reason": "empty_df"}
@@ -566,6 +571,8 @@ def build_vertical_day_time_timeline(df: pd.DataFrame, default_color="#E53935"):
         return None, {"reason": "missing_columns"}
 
     df = df.copy()
+
+    # Convert booking_date to normalized datetime (midnight) and compute start/end in fractional hours
     df["DateOnly"] = pd.to_datetime(df["booking_date"], errors="coerce").dt.normalize()
     df["StartH"] = df["start_time"].apply(to_fractional_hours)
     df["EndH"] = df["end_time"].apply(to_fractional_hours)
@@ -579,8 +586,19 @@ def build_vertical_day_time_timeline(df: pd.DataFrame, default_color="#E53935"):
     invalid_count = int((df["DurH_raw"] <= 0).sum())
     df["DurH"] = df["DurH_raw"].where(df["DurH_raw"] > 0, 0.25)
 
+    # Use config window (expected to be datetime objects at midnight)
     start_window = pd.to_datetime(cfg.TIMELINE_START)
     end_window = pd.to_datetime(cfg.TIMELINE_END)
+
+    # Ensure start_window < end_window
+    if pd.isna(start_window) or pd.isna(end_window) or start_window >= end_window:
+        return None, {
+            "reason": "invalid_window",
+            "start": str(start_window),
+            "end": str(end_window),
+        }
+
+    # Filter to window (include start, exclude end)
     dfw = df[(df["DateOnly"] >= start_window) & (df["DateOnly"] < end_window)]
     if dfw.empty:
         return None, {
@@ -592,7 +610,11 @@ def build_vertical_day_time_timeline(df: pd.DataFrame, default_color="#E53935"):
         }
 
     fig = go.Figure()
-    bar_width_ms = 12 * 60 * 60 * 1000
+
+    # Bar width: small fraction of a day (ms)
+    ms_per_day = 24 * 60 * 60 * 1000
+    bar_width_ms = int(ms_per_day * 0.18)
+
     color_map = {
         "I-HUB 1st floor": "#1E88E5",
         "I-HUB 5th floor": "#43A047",
@@ -603,8 +625,10 @@ def build_vertical_day_time_timeline(df: pd.DataFrame, default_color="#E53935"):
     for _, row in dfw.iterrows():
         ctype = str(row.get("conference_type") or "")
         color = color_map.get(ctype, default_color)
+
         show_legend = False
         name = ""
+
         if ctype not in seen_ctypes:
             show_legend = True
             name = ctype
@@ -612,6 +636,7 @@ def build_vertical_day_time_timeline(df: pd.DataFrame, default_color="#E53935"):
 
         start_disp = row.get("start_time")
         end_disp = row.get("end_time")
+
         fig.add_bar(
             x=[row["DateOnly"]],
             y=[row["DurH"]],
@@ -619,6 +644,7 @@ def build_vertical_day_time_timeline(df: pd.DataFrame, default_color="#E53935"):
             marker_color=color,
             width=[bar_width_ms],
             name=name,
+            offsetgroup=ctype,
             hovertemplate=(
                 "<b>%{customdata[0]}</b> (%{customdata[1]})<br>Date: %{x|%Y-%m-%d}<br>From: %{customdata[2]}<br>To: %{customdata[3]}<extra></extra>"
             ),
@@ -627,21 +653,40 @@ def build_vertical_day_time_timeline(df: pd.DataFrame, default_color="#E53935"):
             ],
             showlegend=show_legend,
         )
-
+    # Y axis simple ticks (every 2 hours)
     tick_vals = list(range(0, 25, 2))
     tick_text = [f"{h:02d}:00" for h in tick_vals]
+
+    # Force daily ticks: dtick in milliseconds = 24 * 60 * 60 * 1000
+    one_day_ms = 24 * 60 * 60 * 1000
+
+    # set tick0 to the epoch of start_window so ticks start exactly there
+    # convert to milliseconds epoch for tick0 accepted formats: use ISO string as safe option
+    tick0_iso = pd.to_datetime(start_window).strftime("%Y-%m-%dT%H:%M:%S")
+
     fig.update_layout(
-        height=cfg.GRAPH_HEIGHT,
-        bargap=0.6,
+        height=getattr(cfg, "GRAPH_HEIGHT", 600),
+        bargap=0.15,
+        barmode="group",
         xaxis=dict(
-            type="date", range=[start_window, end_window], fixedrange=True, title="Date"
+            type="date",
+            range=[start_window, end_window],
+            fixedrange=True,
+            title="Date",
+            tickangle=-90,
+            tickfont=dict(size=10),
+            dtick=one_day_ms,  # one tick per day
+            tick0=tick0_iso,  # aligns ticks to the start_window
+            tickformat="%d %b",  # day + month format
+            automargin=True,
         ),
         yaxis=dict(
             range=[0, 24],
             tickvals=tick_vals,
             ticktext=tick_text,
             fixedrange=True,
-            title="Time of Day",
+            title="Time",
+            automargin=True,
         ),
         margin=dict(l=40, r=20, t=40, b=40),
         legend=dict(
@@ -654,6 +699,7 @@ def build_vertical_day_time_timeline(df: pd.DataFrame, default_color="#E53935"):
         ),
     )
 
+    # Today marker
     now_dt = datetime.now()
     fig.add_vline(
         x=now_dt, line_width=1, line_dash=cfg.LINE_STYLE, line_color=cfg.LINE_COLOR
