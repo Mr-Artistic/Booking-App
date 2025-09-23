@@ -1,29 +1,25 @@
 # Changelog
 
+_added-changed-fixed_
+
 ---
 
-## \_\_-Sep-2025
+## 23-Sep-2025
 
 ### Added:
 
 - App set to a multipage app with top navigation.
 - App 1: Conference Booking
-- App 2: Request Software
+- App 2: Request Resource
 - Added contact details in the email body.
 
 ### Changed:
 
 - Improved the TIP section layout and its content.
 
-### Fixed
-
-- ***
+---
 
 ## 17-Sep-2025
-
-### Added:
-
--
 
 ### Changed:
 
@@ -31,7 +27,3 @@
 - Header margin fixed to negative 70px.
 - Changed login narration.
 - Removed duplicate import in config.py
-
-### Fixed
-
--

@@ -1,6 +1,6 @@
 # About the App
 
-This is a web app that lets users to book the company's facilities such as conference rooms.
+This is a web app that lets users to book the company's facilities such as conference rooms and equipment/software.
 
 ## App Features:
 
