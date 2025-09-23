@@ -10,3 +10,7 @@ This is a web app that lets users to book the company's facilities such as confe
     - Receive an automated confirmation email after the booking.
     - The system prevents overlapping bookings for the same room.
     - The booking data is stored to your database.
+
+## Prerequisites
+
+    - Database and email configured through secrets.toml file.

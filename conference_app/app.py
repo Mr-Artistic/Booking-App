@@ -6,9 +6,10 @@ from yaml.loader import SafeLoader
 from PIL import Image
 import streamlit_authenticator as stauth
 
-import config as cfg
+# Custom Modules
+from conference_app import config as cfg
 
-from functions import (
+from conference_app.functions import (
     init_db,
     get_bookings,
     booking_form,
@@ -30,7 +31,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
     menu_items={
         "Report a bug": "mailto:sumiet_t@quantech.org.in",
-        "About": "App Version 1.0.0",
+        "About": "App Version 1.0  |  Developed by: Sumiet Talekar",
     },
 )
 
@@ -73,7 +74,7 @@ authenticator.logout(location="sidebar")
 
 
 render_header_bar(
-    "Conference Room Booking Dashboard",
+    "Conference Room Booking App",
     "assets/logo.png",
     logo_height=50,
     bg_color="#CBD9F8",
@@ -145,14 +146,17 @@ with left_col:
     else:
         st.info("No bookings to show in the table yet.")
 
-    st.write(
-        f"💡 **Tip:**"
-        f"  \n"
-        f"  \n• Best viewed on a **computer**. :computer:"
-        f"  \n• Hover the **:rainbow[coloured]** bars to see a booking instance."
-        f"  \n• Use the table's column **headers** to sort/filter bookings."
-        f"  \n• Found a **bug?** 🪲 Report to: sumiet_t@quantech.org.in"
-    )
+    container = st.container(border=False)
+    with container:
+        st.info(
+            f"💡 **TIP:**"
+            f"  \n"
+            f"  \n• Provide a **valid email** to receive booking confirmation."
+            f"  \n• Hover a **:rainbow[coloured]** bar in the graph to see booking details."
+            f"  \n• Use the table's **search tool** to search for a specific booking."
+            f"  \n• Best viewed on a **computer**. :computer:"
+            f"  \n• Found a **bug?** 🪲 Report to: sumiet_t@quantech.org.in"
+        )
 
 # Right Column: Booking Form
 with right_col:

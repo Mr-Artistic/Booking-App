@@ -24,4 +24,8 @@ SMTP_HOST = st.secrets.get("smtp_host")
 SMTP_PORT = int(st.secrets.get("smtp_port") or 587)
 SMTP_USER = st.secrets.get("email_user")
 SMTP_PASS = st.secrets.get("email_pass")
-CC_EMAIL = st.secrets.get("cc_email")
+PRIMARY_CONTACT = st.secrets.get("primary_contact_for_conference")
+SECONDARY_CONTACT = st.secrets.get("secondary_contact_for_conference")
+CC_EMAILS = st.secrets[
+    "cc_emails_for_conference"
+]  # must contain at least two email addresses"

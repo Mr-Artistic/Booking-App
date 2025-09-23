@@ -6,13 +6,16 @@ import plotly.graph_objects as go
 import tempfile, os
 import re
 import smtplib
-import config as cfg
-from datetime import datetime, date, time as dtime
 import datetime as _dt
+
+from datetime import datetime, date, time as dtime
 from pathlib import Path
 from email.mime.text import MIMEText
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
+
+# Custom Modules
+from conference_app import config as cfg
 
 # endregion
 
@@ -480,23 +483,24 @@ def booking_form():
                         email,
                     )
 
-                    subject = (
-                        f"Booking confirmation: {conference_type} on {booking_date}"
-                    )
+                    subject = f"Booking confirmation for {conference_type} Conference Room on {booking_date}"
                     body = (
                         f"Hello {person_name},\n\n"
-                        f"Your booking for {conference_type} has been confirmed.\n\n"
+                        f"Your booking for {conference_type} conference room has been confirmed.\n\n"
                         f"Date: {booking_date}\n"
                         f"From: {start_time}\n"
                         f"To: {end_time}\n"
                         f"Company: {company_name}\n"
                         f"Affiliation: {affiliation}\n\n"
-                        "Thank you."
+                        ""
+                        "Thank you!"
+                        f"\n\nPrimary Contact: {cfg.PRIMARY_CONTACT}\n"
+                        f"Secondary Contact: {cfg.SECONDARY_CONTACT}\n"
                     )
 
                     with st.spinner("Sending confirmation email..."):
                         # uses send_email unction defined at last
-                        email_ok = send_email(email, subject, body, cfg.CC_EMAIL)
+                        email_ok = send_email(email, subject, body)
 
                     if not email_ok:
                         st.warning(
@@ -504,7 +508,7 @@ def booking_form():
                         )
                     else:
                         st.success("Confirmation email sent.")
-                    st.session_state["_flash"] = "✅ Booking submitted successfully!"
+                    st.session_state["_flash"] = "✅ Booking successfull, check email!"
                     st.cache_data.clear()
                     st.rerun()
 
@@ -531,7 +535,7 @@ def render_header_bar(
             background-color: {bg_color};
             padding: 6px 8px;
             border-radius: 8px;
-            margin: -70px 0 10px 0;
+            margin: -80px 0 10px 0;
             margin-bottom: 10px;
         ">
             <h1 style="margin: 0; color: black; font-size: 28px;">{title}</h1>
@@ -727,15 +731,18 @@ def build_vertical_day_time_timeline(df: pd.DataFrame, default_color="#E53935"):
 
 
 # region Chapter 12: Send Email function
-def send_email(to_email, subject, body, cc_email):
+def send_email(to_email, subject, body):
     """Sends an email using SMTP settings from config."""
 
     msg = MIMEText(body, "plain")
     msg["Subject"] = subject
     msg["From"] = cfg.SMTP_USER
     msg["To"] = to_email
-    msg["CC"] = cc_email
-    recipients = [to_email, cc_email]
+
+    cc_list = cfg.CC_EMAILS
+    msg["Cc"] = ", ".join(cc_list)
+
+    recipients = [to_email] + cc_list
 
     try:
         if cfg.SMTP_PORT == 465:
