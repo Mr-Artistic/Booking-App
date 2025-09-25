@@ -5,6 +5,7 @@ import yaml
 from yaml.loader import SafeLoader
 from PIL import Image
 import streamlit_authenticator as stauth
+import time
 
 # Custom Modules
 from conference_app import config as cfg
@@ -14,7 +15,8 @@ from conference_app.functions import (
     get_bookings,
     booking_form,
     render_header_bar,
-    build_vertical_day_time_timeline,
+    build_vertical_day_time_timeline,  # using cached version from below
+    build_timeline_figure_cached,
     st_red_alert,
 )
 
@@ -36,6 +38,7 @@ st.set_page_config(
 )
 
 # endregion
+
 
 # region Chapter 3: User Authentication
 
@@ -72,7 +75,6 @@ authenticator.logout(location="sidebar")
 
 # region Chapter 4: Header
 
-
 render_header_bar(
     "Conference Room Booking App",
     "assets/logo.png",
@@ -85,7 +87,7 @@ render_header_bar(
 init_db()
 
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=7 * 24 * 60 * 60)  # 1 week
 def load_bookings():
     return get_bookings()
 
@@ -102,7 +104,15 @@ with left_col:
     # Bordered container for the graph
     with st.container(border=True):
         st.write("📊 Current Bookings Timeline (Date & Time)")
-        fig, info = build_vertical_day_time_timeline(df)
+
+        df_json = df.to_json(date_format="iso", orient="split")
+        nrows = len(df)
+        max_created = None
+        if "created_at" in df.columns and not df["created_at"].isna().all():
+            # using string because datetimes are not stable cache keys otherwise
+            max_created = str(df["created_at"].max())
+
+        fig, info = build_timeline_figure_cached(nrows, max_created, df_json)
 
         if fig is not None:
             st.plotly_chart(fig, use_container_width=True)
@@ -153,7 +163,7 @@ with left_col:
             f"  \n"
             f"  \n• Provide a **valid email** to receive booking confirmation."
             f"  \n• Hover a **:rainbow[coloured]** bar in the graph to see booking details."
-            f"  \n• Use the table's **search tool** to search for a specific booking."
+            f"  \n• Use the table's **search tool** to search for a booking instance."
             f"  \n• Best viewed on a **computer**. :computer:"
             f"  \n• Found a **bug?** 🪲 Report to: sumiet_t@quantech.org.in"
         )
@@ -165,3 +175,12 @@ with right_col:
         st.success(st.session_state.pop("_flash"))
 
 # endregion
+
+# region Chapter 7: Clear Cache
+
+if st.button("🔄 Clear Cache"):
+    st.cache_data.clear()
+    st.cache_resource.clear()
+    st.success("All caches cleared. Refreshing the page.")
+    time.sleep(3)
+    st.rerun()

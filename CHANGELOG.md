@@ -4,6 +4,17 @@ _added-changed-fixed_
 
 ---
 
+## 25-Sep-2025
+
+### Improved:
+
+- Added cache for timeline graph.
+- Increased all the ttls to 1 week.
+- Added a button to manually clear all caches.
+- Form fields marked as mandatory.
+
+---
+
 ## 23-Sep-2025
 
 ### Added:

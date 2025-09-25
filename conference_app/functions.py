@@ -7,6 +7,7 @@ import tempfile, os
 import re
 import smtplib
 import datetime as _dt
+from io import StringIO
 
 from datetime import datetime, date, time as dtime
 from pathlib import Path
@@ -59,11 +60,11 @@ def init_db():
         booking_date DATE,
         start_time TIME,
         end_time TIME,
-        conference_type VARCHAR(200),
-        person_name VARCHAR(200),
-        company_name VARCHAR(200),
-        affiliation VARCHAR(200),
-        email VARCHAR(200),
+        conference_type VARCHAR(100),
+        person_name VARCHAR(100),
+        company_name VARCHAR(100),
+        affiliation VARCHAR(100),
+        email VARCHAR(100),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     """
@@ -403,16 +404,16 @@ def st_red_alert(msg: str):
 def booking_form():
     st.subheader(":red[**👉 Book Conference Room**]")
     with st.form("booking_form"):
-        booking_date = st.date_input("Booking Date")
-        start_time = st.time_input("Start Time")
-        end_time = st.time_input("End Time")
+        booking_date = st.date_input("Booking Date*")
+        start_time = st.time_input("Start Time*")
+        end_time = st.time_input("End Time*")
         conference_type = st.selectbox(
-            "Conference Type", ["I-HUB 1st floor", "I-HUB 5th floor", "Mendeleev"]
+            "Conference Type*", ["I-HUB 1st floor", "I-HUB 5th floor", "Mendeleev"]
         )
-        person_name = st.text_input("Person Name")
-        company_name = st.text_input("Company/Organization")
-        affiliation = st.selectbox("Affiliation/Department", ["I-HUB", "AIC"])
-        email = st.text_input("Email")
+        person_name = st.text_input("Person Name*")
+        company_name = st.text_input("Company/Organization*")
+        affiliation = st.selectbox("Affiliation/Department*", ["I-HUB", "AIC"])
+        email = st.text_input("Email*")
 
         submitted = st.form_submit_button("Submit Booking")
 
@@ -457,12 +458,6 @@ def booking_form():
                 if len(company_name) > 100:
                     st_red_alert(
                         "Company/Organization is too long (max 100 characters)."
-                    )
-                    return
-
-                if len(affiliation) > 100:
-                    st_red_alert(
-                        "Affiliation/Department is too long (max 100 characters)."
                     )
                     return
 
@@ -729,8 +724,31 @@ def build_vertical_day_time_timeline(df: pd.DataFrame, default_color="#E53935"):
 
 # endregion
 
+# region Chapter 12: Cached wrapper to build the timeline figure
 
-# region Chapter 12: Send Email function
+
+@st.cache_data(ttl=7 * 24 * 60 * 60)  # 1 week
+def build_timeline_figure_cached(n_rows: int, max_created_at: str, df_json: str):
+    """
+    - n_rows and max_created_at are cheap cache keys (fingerprint).
+    - df_json: small JSON serialization of the dataframe (orient='split' recommended).
+    """
+    try:
+        # Recreate DataFrame (orient='split')
+        df = pd.read_json(StringIO(df_json), orient="split")
+    except Exception as e:
+        # If reconstruction fails, pass None so plotting function can handle it
+        print("build_timeline_figure_cached: failed to read df_json:", e)
+        return None, {"reason": "invalid_df_json"}
+
+    # Calls the main plotting function
+    return build_vertical_day_time_timeline(df)
+
+
+# endregion
+
+
+# region Chapter 13: Send Email function
 def send_email(to_email, subject, body):
     """Sends an email using SMTP settings from config."""
 

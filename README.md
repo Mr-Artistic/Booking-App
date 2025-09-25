@@ -14,3 +14,4 @@ This is a web app that lets users to book the company's facilities such as confe
 ## Prerequisites
 
     - Database and email configured through secrets.toml file.
+    - User Auth configured via yaml file (requires streamlit-authenticator).
