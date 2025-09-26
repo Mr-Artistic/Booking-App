@@ -16,7 +16,8 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 
 # Custom Modules
-from conference_app import config as cfg
+from resource_app import config as cfg
+from resource_app.config import resource_list, color_map, resource_price_list
 
 # endregion
 
@@ -55,12 +56,12 @@ def get_engine():
 def init_db():
     engine = get_engine()
     create_table_sql = """
-    CREATE TABLE IF NOT EXISTS conference_bookings (
+    CREATE TABLE IF NOT EXISTS resource_bookings (
         id INT AUTO_INCREMENT PRIMARY KEY,
         booking_date DATE,
         start_time TIME,
         end_time TIME,
-        conference_type VARCHAR(100),
+        resource_type VARCHAR(1000),
         person_name VARCHAR(100),
         company_name VARCHAR(100),
         affiliation VARCHAR(100),
@@ -69,14 +70,14 @@ def init_db():
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     """
 
-    idx_sql = "CREATE INDEX idx_booking_date_conference_type ON conference_bookings (booking_date, conference_type);"
+    idx_sql = "CREATE INDEX idx_booking_date ON resource_bookings (booking_date);"
     try:
         with engine.begin() as conn:
             conn.execute(text(create_table_sql))
             # create index if missing
             schema = st.secrets.get("mysql_db") or engine.url.database
             idx_check = text(
-                "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema=:schema AND table_name='conference_bookings' AND index_name='idx_booking_date_conference_type'"
+                "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema=:schema AND table_name='resource_bookings' AND index_name='idx_booking_date'"
             )
             cnt = int(conn.execute(idx_check, {"schema": schema}).scalar() or 0)
             if cnt == 0:
@@ -94,7 +95,7 @@ def add_booking(
     booking_date: date,
     start_time: dtime,
     end_time: dtime,
-    conference_type: str,
+    resource_type: str,
     person_name: str,
     company_name: str,
     affiliation: str,
@@ -106,16 +107,16 @@ def add_booking(
     engine = get_engine()
     insert_sql = text(
         """
-        INSERT INTO conference_bookings
-        (booking_date, start_time, end_time, conference_type, person_name, company_name, affiliation, email)
-        VALUES (:booking_date, :start_time, :end_time, :conference_type, :person_name, :company_name, :affiliation, :email)
+        INSERT INTO resource_bookings
+        (booking_date, start_time, end_time, resource_type, person_name, company_name, affiliation, email)
+        VALUES (:booking_date, :start_time, :end_time, :resource_type, :person_name, :company_name, :affiliation, :email)
     """
     )
     params = {
         "booking_date": booking_date,
         "start_time": start_time,
         "end_time": end_time,
-        "conference_type": conference_type,
+        "resource_type": resource_type,
         "person_name": person_name,
         "company_name": company_name,
         "affiliation": affiliation,
@@ -139,9 +140,9 @@ def get_bookings() -> pd.DataFrame:
     """
     engine = get_engine()
     sql = """
-        SELECT id, booking_date, start_time, end_time, conference_type,
+        SELECT id, booking_date, start_time, end_time, resource_type,
                person_name, company_name, affiliation, email, created_at
-        FROM conference_bookings
+        FROM resource_bookings
         ORDER BY booking_date ASC, start_time ASC, id ASC
     """
     try:
@@ -154,7 +155,7 @@ def get_bookings() -> pd.DataFrame:
                 "booking_date",
                 "start_time",
                 "end_time",
-                "conference_type",
+                "resource_type",
                 "person_name",
                 "company_name",
                 "affiliation",
@@ -168,7 +169,7 @@ def get_bookings() -> pd.DataFrame:
         "booking_date",
         "start_time",
         "end_time",
-        "conference_type",
+        "resource_type",
         "person_name",
         "company_name",
         "affiliation",
@@ -241,11 +242,25 @@ def get_bookings() -> pd.DataFrame:
 
 
 # region Chapter 6: Check Conflict function
-def check_conflict(booking_date, start_time, end_time, conference_type):
+def check_conflict(booking_date, start_time, end_time, requested_resources):
     """
-    Combines date + time to datetimes and check overlaps for same date & conference_type.
+    Checks overlaps for the same date *only* for rows that share at least one resource.
+    - requested_resources may be a list/tuple of strings or a single comma-joined string.
     Returns (bool_conflict, details_or_None)
     """
+    # Normalize requested_resources into a set of trimmed lowercase tokens
+    if requested_resources is None:
+        req_set = set()
+    elif isinstance(requested_resources, (list, tuple, set)):
+        req_set = {
+            str(x).strip().lower() for x in requested_resources if str(x).strip()
+        }
+    else:
+        # single string (possibly comma-separated)
+        req_set = {
+            t.strip().lower() for t in str(requested_resources).split(",") if t.strip()
+        }
+
     engine = get_engine()
     try:
         new_start = datetime.combine(booking_date, start_time)
@@ -257,23 +272,31 @@ def check_conflict(booking_date, start_time, end_time, conference_type):
 
     sql = text(
         """
-        SELECT booking_date, start_time, end_time, conference_type, person_name, company_name
-        FROM conference_bookings
-        WHERE booking_date = :bdate AND conference_type = :ctype
+        SELECT booking_date, start_time, end_time, resource_type, person_name, company_name
+        FROM resource_bookings
+        WHERE booking_date = :bdate
     """
     )
+
     try:
         with engine.connect() as conn:
-            rows = (
-                conn.execute(sql, {"bdate": booking_date, "ctype": conference_type})
-                .mappings()
-                .all()
-            )
+            rows = conn.execute(sql, {"bdate": booking_date}).mappings().all()
     except Exception as e:
         print("check_conflict DB error:", e)
         return False, None
 
     for r in rows:
+        # Parse stored resource_type CSV into a set of tokens (lowercased)
+        raw = r.get("resource_type") or ""
+        existing_set = {t.strip().lower() for t in str(raw).split(",") if t.strip()}
+
+        # If no intersection, skip this row (different resources)
+        if req_set and existing_set and req_set.isdisjoint(existing_set):
+            continue
+        # If both sets empty, treat as potential conflict (conservative)
+        # If req_set empty (shouldn't happen since form validates), treat as potential conflict
+        # Proceed to time overlap check
+
         db_start = r.get("start_time")
         db_end = r.get("end_time")
 
@@ -324,11 +347,18 @@ def check_conflict(booking_date, start_time, end_time, conference_type):
             continue
 
         if new_start < exist_end and new_end > exist_start:
+            # build details showing which resource(s) intersected
+            intersect = (
+                ", ".join(sorted(req_set.intersection(existing_set)))
+                if req_set and existing_set
+                else (", ".join(sorted(existing_set)) if existing_set else "")
+            )
             details = (
-                f"Existing booking in [{r.get('conference_type','')}] "
+                f"Existing booking for [{intersect or r.get('resource_type','')}] "
                 f"by [{r.get('person_name','')} ({r.get('company_name','')})] "
                 f"from {db_start} to {db_end}."
             )
+
             return True, details
     return False, None
 
@@ -402,17 +432,17 @@ def st_red_alert(msg: str):
 
 # region Chapter 9: Booking Form function
 def booking_form():
-    st.subheader(":red[**👉 Book Conference Room**]")
+    st.subheader(":red[**👉 Book a Resource**]")
     with st.form("booking_form"):
+        with st.popover("Check Pricing (per hour)"):
+            st.write(resource_price_list)
         booking_date = st.date_input("Booking Date*")
         start_time = st.time_input("Start Time*")
         end_time = st.time_input("End Time*")
-        conference_type = st.selectbox(
-            "Conference Type*", ["I-HUB 1st floor", "I-HUB 5th floor", "Mendeleev"]
-        )
+        resource_types = st.multiselect("Resource Type*", resource_list)
         person_name = st.text_input("Person Name*")
         company_name = st.text_input("Company*")
-        affiliation = st.selectbox("Affiliation*", ["I-HUB", "AIC"])
+        affiliation = st.selectbox("Affiliation*", ["I-HUB", "IISER", "Other"])
         email = st.text_input("Email*")
 
         submitted = st.form_submit_button("Submit Booking")
@@ -425,8 +455,8 @@ def booking_form():
                 missing.append("Start Time")
             if not end_time:
                 missing.append("End Time")
-            if not conference_type:
-                missing.append("Conference Type")
+            if not resource_types:
+                missing.append("Resource Type")
             if not person_name.strip():
                 missing.append("Person Name")
             if not company_name.strip():
@@ -442,8 +472,8 @@ def booking_form():
                 # Validation for future booking
                 now = datetime.now()
                 requested_start = datetime.combine(booking_date, start_time)
-                if requested_start < now:
-                    st_red_alert("Booking date/time cannot be a history.")
+                if requested_start < now + timedelta(hours=18):
+                    st_red_alert("Please book at least 18 hours in advance.")
                     return
 
                 if end_time <= start_time:
@@ -466,36 +496,42 @@ def booking_form():
                     st_red_alert("Company Name is too long (max 100 characters).")
                     return
 
-                conflict, details = check_conflict(
-                    booking_date, start_time, end_time, conference_type
-                )
+                with st.spinner("Checking conflict…"):
+                    conflict, details = check_conflict(
+                        booking_date, start_time, end_time, resource_types
+                    )
+
                 if conflict:
                     st_red_alert(f"❌ Time conflict! {details}")
                 else:
+                    resource_type_str = ", ".join(resource_types)
+
                     add_booking(
                         booking_date,
                         start_time,
                         end_time,
-                        conference_type,
+                        resource_type_str,
                         person_name,
                         company_name,
                         affiliation,
                         email,
                     )
 
-                    subject = f"Booking confirmation for {conference_type} Conference Room on {booking_date}"
+                    subject = f"Booking confirmation for resource(s) on {booking_date}"
                     body = (
                         f"Hello {person_name},\n\n"
-                        f"Your booking for {conference_type} conference room has been confirmed.\n\n"
+                        f"Your booking for resources has been confirmed (subject to the receipt of payment).\n\n"
                         f"Date: {booking_date}\n"
                         f"From: {start_time}\n"
                         f"To: {end_time}\n"
                         f"Company: {company_name}\n"
                         f"Affiliation: {affiliation}\n\n"
+                        f"Resource(s) Booked: {resource_type_str}.\n\n"
                         ""
                         "Thank you!"
                         f"\n\nPrimary Contact: {cfg.PRIMARY_CONTACT}\n"
-                        f"Secondary Contact: {cfg.SECONDARY_CONTACT}\n"
+                        f"Secondary Contact: {cfg.SECONDARY_CONTACT}\n\n"
+                        f"NOTE: Please share your payment reference number to enable us process this booking.\n"
                     )
 
                     with st.spinner("Sending confirmation email..."):
@@ -508,7 +544,9 @@ def booking_form():
                         )
                     else:
                         st.success("Confirmation email sent.")
-                    st.session_state["_flash"] = "✅ Booking successfull, check email!"
+                    st.session_state["_flash"] = (
+                        "✅ Booking successfull, check email!<br><br>To proceed further, please pay via: linkkkkkkkkkkkkkkkkkkkkk"
+                    )
                     st.cache_data.clear()
                     st.rerun()
 
@@ -552,12 +590,10 @@ def render_header_bar(
 # region Chapter 11: Plotting function
 def build_vertical_day_time_timeline(df: pd.DataFrame, default_color="#E53935"):
     """
-    Timeline builder. Expects get_bookings() style dataframe where start_time/end_time are strings 'HH:MM:SS'.
-
-    Features:
-    - 4-week window from cfg.TIMELINE_START to cfg.TIMELINE_END (datetime at midnight)
-    - one tick per day (dtick = 24h) aligned to start_window (tick0)
-    - grouped bars (# offsetgroup + barmode='group') to avoid overlap
+    Timeline builder:
+    - Explodes rows so each canonical resource becomes its own row (prevents overlap).
+    - Computes a per-day slot index and shifts x (date) by a tiny fraction of a day so bars sit side-by-side.
+    - Dynamically computes bar width but keeps it thinner by default.
     """
     if df is None or df.empty:
         return None, {"reason": "empty_df"}
@@ -566,7 +602,7 @@ def build_vertical_day_time_timeline(df: pd.DataFrame, default_color="#E53935"):
         "booking_date",
         "start_time",
         "end_time",
-        "conference_type",
+        "resource_type",
         "person_name",
         "company_name",
         "affiliation",
@@ -614,64 +650,152 @@ def build_vertical_day_time_timeline(df: pd.DataFrame, default_color="#E53935"):
             "max_date": df["DateOnly"].max(),
         }
 
+    # --- Compute how many bars will be placed per day ---
+    # For each row, count how many canonical resources it maps to (so multi-resource rows count multiple bars).
+    canonical = [r.strip() for r in getattr(cfg, "resource_list", [])]
+    canonical_lower = [r.lower() for r in canonical]
+
+    def extract_canonical_tokens(row_val):
+        if not row_val:
+            return []
+        toks = [t.strip() for t in str(row_val).split(",") if t.strip()]
+        # keep only tokens that match canonical list (exact match case-insensitive)
+        return [t for t in toks if t.lower() in canonical_lower]
+
+    # reset_index so we can keep original row identity for tooltip info
+    dfw = dfw.reset_index(drop=True)
+    dfw["_orig_idx"] = dfw.index
+
+    # build exploded dataframe
+    exploded_rows = []
+    for _, row in dfw.iterrows():
+        tokens = extract_canonical_tokens(row["resource_type"])
+        if not tokens:
+            # keep rows with no canonical match as-is (optional: skip them)
+            continue
+        for tok in tokens:
+            exploded_rows.append(
+                {
+                    "_orig_idx": row["_orig_idx"],
+                    "DateOnly": row["DateOnly"],
+                    "StartH": row["StartH"],
+                    "DurH": row["DurH"],
+                    "person_name": row.get("person_name"),
+                    "company_name": row.get("company_name"),
+                    "start_time": row.get("start_time"),
+                    "end_time": row.get("end_time"),
+                    "ResourceCanonical": tok,  # keeps original capitalization from token
+                }
+            )
+
+    if not exploded_rows:
+        return None, {"reason": "no_canonical_rows"}
+
+    df_exp = pd.DataFrame(exploded_rows)
+
+    # Standardize ResourceCanonical to canonical capitalization by mapping lowercase -> canonical
+    canon_map = {r.lower(): r for r in canonical}
+    df_exp["ResourceCanonical"] = (
+        df_exp["ResourceCanonical"]
+        .str.strip()
+        .str.lower()
+        .map(lambda v: canon_map.get(v, v))
+    )
+
+    # Compute slots per day: each row on same DateOnly gets a unique slot index (0..n-1)
+    df_exp["slot_idx"] = df_exp.groupby("DateOnly").cumcount()
+    slot_counts = (
+        df_exp.groupby("DateOnly")["slot_idx"].max().add(1).to_dict()
+    )  # number of bars per day
+
+    # --- compute width per bar dynamically so they fit side-by-side ---
+    ms_per_day = 24 * 60 * 60 * 1000
+    # reserve 80% of day width to hold bars, leave 20% for breathing room
+    usable_fraction = 0.60
+
+    max_bars_per_day = max([int(v) for v in slot_counts.values()] + [1])
+    bar_width_ms = int(ms_per_day * (usable_fraction / max_bars_per_day))
+    # sensible caps (smaller max width)
+    min_width_ms = int(ms_per_day * 0.0025)
+    max_width_ms = int(ms_per_day * 0.35)
+    bar_width_ms = max(min_width_ms, min(bar_width_ms, max_width_ms))
+
+    # spacing multiplier between adjacent slots (slightly larger than width to avoid touching)
+    spacing_factor = 1.08
+    width_days = bar_width_ms / ms_per_day
+
+    # compute offset in fractional days for each row: center the group on the date
+    def compute_offset_days(row):
+        count = slot_counts.get(row["DateOnly"], 1)
+        idx = row["slot_idx"]
+        center = (count - 1) / 2.0
+        # per-slot shift in days
+        per_slot = width_days * spacing_factor
+        return (idx - center) * per_slot
+
+    df_exp["offset_days"] = df_exp.apply(compute_offset_days, axis=1)
+    # final x positions: DateOnly + offset_days
+    df_exp["x_pos"] = pd.to_datetime(df_exp["DateOnly"]) + pd.to_timedelta(
+        df_exp["offset_days"], unit="D"
+    )
+
     fig = go.Figure()
 
-    # Bar width: small fraction of a day (ms)
-    ms_per_day = 24 * 60 * 60 * 1000
-    bar_width_ms = int(ms_per_day * 0.18)
+    # Build one trace per resource (clean legend)
+    for resource in canonical:
+        color = getattr(cfg, "color_map", {}).get(resource, default_color)
 
-    color_map = {
-        "I-HUB 1st floor": "#1E88E5",
-        "I-HUB 5th floor": "#43A047",
-        "Mendeleev": "#FB8C00",
-    }
-    seen_ctypes = set()
+        subset = df_exp[df_exp["ResourceCanonical"] == resource]
+        if subset.empty:
+            continue
 
-    for _, row in dfw.iterrows():
-        ctype = str(row.get("conference_type") or "")
-        color = color_map.get(ctype, default_color)
-
-        show_legend = False
-        name = ""
-
-        if ctype not in seen_ctypes:
-            show_legend = True
-            name = ctype
-            seen_ctypes.add(ctype)
-
-        start_disp = row.get("start_time")
-        end_disp = row.get("end_time")
+        xs = list(subset["x_pos"])
+        ys = list(subset["DurH"])
+        bases = list(subset["StartH"])
+        customdata = [
+            [
+                row.get("person_name"),
+                row.get("company_name"),
+                row.get("start_time"),
+                row.get("end_time"),
+            ]
+            for _, row in subset.iterrows()
+        ]
 
         fig.add_bar(
-            x=[row["DateOnly"]],
-            y=[row["DurH"]],
-            base=[row["StartH"]],
+            x=xs,
+            y=ys,
+            base=bases,
             marker_color=color,
-            width=[bar_width_ms],
-            name=name,
-            offsetgroup=ctype,
+            width=[bar_width_ms] * len(xs),
+            name=resource,
+            offsetgroup=resource,
+            customdata=customdata,
             hovertemplate=(
                 "<b>%{customdata[0]}</b> (%{customdata[1]})<br>Date: %{x|%Y-%m-%d}<br>From: %{customdata[2]}<br>To: %{customdata[3]}<extra></extra>"
             ),
-            customdata=[
-                [row.get("person_name"), row.get("company_name"), start_disp, end_disp]
-            ],
-            showlegend=show_legend,
+            showlegend=True,
+            marker_line_width=0,
         )
+
     # Y axis simple ticks (every 2 hours)
     tick_vals = list(range(0, 25, 2))
     tick_text = [f"{h:02d}:00" for h in tick_vals]
 
     # Force daily ticks: dtick in milliseconds = 24 * 60 * 60 * 1000
-    one_day_ms = 24 * 60 * 60 * 1000
+    one_day_ms = ms_per_day
 
     # set tick0 to the epoch of start_window so ticks start exactly there
     # convert to milliseconds epoch for tick0 accepted formats: use ISO string as safe option
     tick0_iso = pd.to_datetime(start_window).strftime("%Y-%m-%dT%H:%M:%S")
 
+    # Layout: horizontal legend at bottom, leave ample bottom margin so legend does not overlap
+    # If you need more space for a long legend, increase 'b' or reduce legend.font.size.
+
     fig.update_layout(
-        height=getattr(cfg, "GRAPH_HEIGHT", 600),
-        bargap=0.15,
+        height=getattr(cfg, "GRAPH_HEIGHT", 620),
+        bargap=0.02,
+        bargroupgap=0.01,
         barmode="group",
         xaxis=dict(
             type="date",
@@ -684,6 +808,7 @@ def build_vertical_day_time_timeline(df: pd.DataFrame, default_color="#E53935"):
             tick0=tick0_iso,  # aligns ticks to the start_window
             tickformat="%d %b",  # day + month format
             automargin=True,
+            domain=[0.0, 1.0],
         ),
         yaxis=dict(
             range=[0, 24],
@@ -693,16 +818,19 @@ def build_vertical_day_time_timeline(df: pd.DataFrame, default_color="#E53935"):
             title="Time",
             automargin=True,
         ),
-        margin=dict(l=40, r=20, t=40, b=40),
+        margin=dict(
+            l=40, r=20, t=40, b=150
+        ),  # <-- reserve big bottom margin for horizontal legend
         legend=dict(
-            title="Conference Type",
+            title="Resource Type",
             orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1,
+            yanchor="top",
+            y=-0.35,  # place legend below the plot area (negative y)
+            xanchor="center",
+            x=0.5,
+            traceorder="normal",
         ),
-    )
+    ),
 
     # Today marker
     now_dt = datetime.now()
@@ -714,7 +842,7 @@ def build_vertical_day_time_timeline(df: pd.DataFrame, default_color="#E53935"):
         y=1,
         xref="x",
         yref="paper",
-        text="Today",
+        text="Now",
         showarrow=False,
         font=dict(color=cfg.LINE_COLOR),
         yanchor="bottom",

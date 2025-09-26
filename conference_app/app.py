@@ -64,9 +64,8 @@ if UserAuth:
 
     if not authentication_status:
         if authentication_status is False:
-            st.error("Username/password is incorrect")
+            st_red_alert("Username/password is incorrect")
         else:
-
             st_red_alert("Please login to access the Booking App (check sidebar).")
         st.stop()
 
@@ -184,6 +183,6 @@ with right_col:
 if st.button("🔄 Clear Cache"):
     st.cache_data.clear()
     st.cache_resource.clear()
-    st.success("All caches cleared. Refreshing the page.")
+    st.success("All caches cleared. Refreshing the page...")
     time.sleep(3)
     st.rerun()
