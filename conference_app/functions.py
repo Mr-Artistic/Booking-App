@@ -9,7 +9,7 @@ import smtplib
 import datetime as _dt
 from io import StringIO
 
-from datetime import datetime, date, time as dtime
+from datetime import datetime, timedelta, date, time as dtime
 from pathlib import Path
 from email.mime.text import MIMEText
 from sqlalchemy import create_engine, text
@@ -56,7 +56,7 @@ def init_db():
     engine = get_engine()
     create_table_sql = """
     CREATE TABLE IF NOT EXISTS conference_bookings (
-        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         booking_date DATE,
         start_time TIME,
         end_time TIME,
@@ -411,8 +411,8 @@ def booking_form():
             "Conference Type*", ["I-HUB 1st floor", "I-HUB 5th floor", "Mendeleev"]
         )
         person_name = st.text_input("Person Name*")
-        company_name = st.text_input("Company/Organization*")
-        affiliation = st.selectbox("Affiliation/Department*", ["I-HUB", "AIC"])
+        company_name = st.text_input("Company*")
+        affiliation = st.selectbox("Affiliation*", ["I-HUB", "AIC"])
         email = st.text_input("Email*")
 
         submitted = st.form_submit_button("Submit Booking")
@@ -430,15 +430,22 @@ def booking_form():
             if not person_name.strip():
                 missing.append("Person Name")
             if not company_name.strip():
-                missing.append("Company/Organization")
+                missing.append("Company")
             if not affiliation.strip():
-                missing.append("Affiliation/Department")
+                missing.append("Affiliation")
             if not email.strip():
                 missing.append("Email")
 
             if missing:
                 st_red_alert(f"Please fill all required fields: {', '.join(missing)}.")
             else:
+                # Validation for future booking
+                now = datetime.now()
+                requested_start = datetime.combine(booking_date, start_time)
+                if requested_start < now:
+                    st_red_alert("Booking date/time cannot be a history.")
+                    return
+
                 if end_time <= start_time:
                     st_red_alert("End Time must be after Start Time.")
                     return
@@ -456,9 +463,7 @@ def booking_form():
                     return
 
                 if len(company_name) > 100:
-                    st_red_alert(
-                        "Company/Organization is too long (max 100 characters)."
-                    )
+                    st_red_alert("Company Name is too long (max 100 characters).")
                     return
 
                 conflict, details = check_conflict(
@@ -530,7 +535,7 @@ def render_header_bar(
             background-color: {bg_color};
             padding: 6px 8px;
             border-radius: 8px;
-            margin: -80px 0 10px 0;
+            margin: -60px 0 10px 0;
             margin-bottom: 10px;
         ">
             <h1 style="margin: 0; color: black; font-size: 28px;">{title}</h1>

@@ -42,32 +42,35 @@ st.set_page_config(
 
 # region Chapter 3: User Authentication
 
-with open(".streamlit/cred.yaml") as file:
-    auth_config = yaml.load(file, Loader=SafeLoader)
+UserAuth = False
 
-authenticator = stauth.Authenticate(
-    auth_config["credentials"],
-    auth_config["cookie"]["name"],
-    auth_config["cookie"]["key"],
-    auth_config["cookie"]["expiry_days"],
-)
+if UserAuth:
+    with open(".streamlit/cred.yaml") as file:
+        auth_config = yaml.load(file, Loader=SafeLoader)
 
-authenticator.login(location="sidebar")
+    authenticator = stauth.Authenticate(
+        auth_config["credentials"],
+        auth_config["cookie"]["name"],
+        auth_config["cookie"]["key"],
+        auth_config["cookie"]["expiry_days"],
+    )
 
-# Read session values
-authentication_status = st.session_state.get("authentication_status")
-name = st.session_state.get("name")
-username = st.session_state.get("username")
+    authenticator.login(location="sidebar")
 
-if not authentication_status:
-    if authentication_status is False:
-        st.error("Username/password is incorrect")
-    else:
+    # Read session values
+    authentication_status = st.session_state.get("authentication_status")
+    name = st.session_state.get("name")
+    username = st.session_state.get("username")
 
-        st_red_alert("Please login to access the Booking App (check sidebar).")
-    st.stop()
+    if not authentication_status:
+        if authentication_status is False:
+            st.error("Username/password is incorrect")
+        else:
 
-authenticator.logout(location="sidebar")
+            st_red_alert("Please login to access the Booking App (check sidebar).")
+        st.stop()
+
+    authenticator.logout(location="sidebar")
 
 
 # endregion
@@ -162,7 +165,7 @@ with left_col:
             f"💡 **TIP:**"
             f"  \n"
             f"  \n• Provide a **valid email** to receive booking confirmation."
-            f"  \n• Hover a **:rainbow[coloured]** bar in the graph to see booking details."
+            f"  \n• Hover a **:rainbow[coloured]** bar in the graph to see the booking details."
             f"  \n• Use the table's **search tool** to search for a booking instance."
             f"  \n• Best viewed on a **computer**. :computer:"
             f"  \n• Found a **bug?** 🪲 Report to: sumiet_t@quantech.org.in"
