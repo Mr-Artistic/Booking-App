@@ -16,3 +16,12 @@ This is a web app that lets users to book the company's facilities such as confe
 
     - Database, email and resources configured through secrets.toml file.
     - User Auth configured via yaml file (requires streamlit-authenticator).
+
+## Deployment
+
+    - Deploy with render or your vm.
+    - Route through your domain via cloudflare or Nginx reverse-proxy.
+
+## App Demo (Screenshot)
+
+    - See demo.png

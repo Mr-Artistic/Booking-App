@@ -9,6 +9,7 @@ _added-changed-fixed_
 ### Added:
 
 - Added custom filter for timeline view in the resource booking app.
+- Added demo screenshot for the app.
 
 ---
 
