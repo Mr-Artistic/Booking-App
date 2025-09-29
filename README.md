@@ -1,17 +1,18 @@
 # About the App
 
-This is a web app that lets users to book the company's facilities such as conference rooms and equipment/software.
+This is a web app that lets users to book the company's facilities such as conference rooms and equipment/software (resource).
 
 ## App Features:
 
     - View all current bookings in a timeline chart (Date vs Time).
-    - See detailed information on all existing reservations in a table format.
-    - Submit a new booking request for a conference room.
+    - See detailed information on all existing bookings in a table format.
+    - Check pricing for a resource.
+    - Submit a new booking request for a resource or conference room.
     - Receive an automated confirmation email after the booking.
-    - The system prevents overlapping bookings for the same room.
+    - The system prevents overlapping bookings for the same resource/room.
     - The booking data is stored to your database.
 
-## Prerequisites
+## Prerequisites (private)
 
-    - Database and email configured through secrets.toml file.
+    - Database, email and resources configured through secrets.toml file.
     - User Auth configured via yaml file (requires streamlit-authenticator).

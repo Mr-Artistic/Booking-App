@@ -101,7 +101,8 @@ with st.spinner("Loading bookings…"):
 
 # endregion
 
-# region Chapter 6: App Layout (2 Columns)
+# region Chapter 6: Bookings Timline with custom filter
+# Left Column
 left_col, right_col = st.columns([2, 1], gap="small")
 with left_col:
 
@@ -109,18 +110,14 @@ with left_col:
     with st.container(border=True):
         st.write("📊 Current Bookings Timeline (Date & Time)")
 
-        # Multiselect Filter for User; fallback to config.resource_list if df empty or column missing
         # --- Multiselect Filter for User ---
-        # Use canonical list from config so user-created combinations don't appear here.
         # Fallback to config.resource_list if df empty or column missing
+        # Always use canonical resource list from config.resource_list so user-created combinations don't appear here.
         if df is None or df.empty or "resource_type" not in df.columns:
             available_types = (
                 list(cfg.resource_list) if getattr(cfg, "resource_list", None) else []
             )
         else:
-            # Always present the defined resource list (preserves order from config)
-            # If you prefer only those that have any bookings, you can filter this further,
-            # but do NOT show user-created combinations.
             available_types = list(cfg.resource_list)
 
         # default = first item if available
@@ -130,9 +127,8 @@ with left_col:
             default=[available_types[0]] if available_types else [],
         )
 
-        # apply filter for plotting & table
-        # We need to keep rows that include ANY of the selected single resource types
-        # even though DB stores rows as comma-joined strings like "A, B".
+        # Apply filter for plotting & table.
+        # Include ANY of the selected single resource even if DB stores rows as comma-joined strings.
         if selected_types and "resource_type" in (df.columns if df is not None else []):
             # Normalize selected types to lower-case trimmed tokens for comparison
             sel_set = {str(x).strip().lower() for x in selected_types if str(x).strip()}
@@ -152,21 +148,22 @@ with left_col:
             mask = df["resource_type"].apply(lambda v: row_matches_any(sel_set, v))
             df = df[mask].copy()
         else:
-            # nothing selected OR column missing -> present an empty frame to downstream logic
+            # Nothing selected OR column missing -> an empty frame to downstream logic
             df = (
                 df.iloc[0:0].copy()
                 if (df is not None and not df.empty)
                 else (pd.DataFrame() if df is None else df.copy())
             )
-        # --- end filter ---
+        # --- End Filter ---
 
-        # serialize filtered df and build cached figure
+        # Serialize filtered df and build cached figure
         df_json = df.to_json(date_format="iso", orient="split")
         nrows = len(df)
         max_created = None
         if "created_at" in df.columns and not df["created_at"].isna().all():
             max_created = str(df["created_at"].max())
 
+        # fig, info = build_vertical_day_time_timeline(df) --> using cached version below
         fig, info = build_timeline_figure_cached(nrows, max_created, df_json)
 
         if fig is not None:
@@ -188,6 +185,8 @@ with left_col:
             else:
                 st.info("No data to show.")
 
+    # Table Dataframe
+
     st.subheader("📌 All Existing Bookings")
     if not df.empty:
         st.dataframe(
@@ -202,6 +201,8 @@ with left_col:
                     "affiliation",
                     "email",
                     "created_at_ist",
+                    "payment_status",
+                    "payment_id",
                 ]
             ]
             .sort_values(by=["booking_date", "start_time"])
@@ -211,16 +212,22 @@ with left_col:
     else:
         st.info("No bookings to show in the table yet.")
 
+    # Tip section
+
     container = st.container(border=False)
     with container:
         st.info(
             f"💡 **TIP:**"
             f"  \n"
             f"  \n• Provide a **valid email** to receive booking confirmation."
+            f"  \n• Please share your **payment reference** to enable us process the booking."
+            f"  \n• Bookings are to be done at least **18 hours** in advance."
+            f"  \n• Resources are to be booked only between **09:00 and 18:00**."
             f"  \n• Hover a **:rainbow[coloured]** bar in the graph to see the booking details."
             f"  \n• Use the table's **search tool** to search for a booking instance."
             f"  \n• Best viewed on a **computer**. :computer:"
             f"  \n• Found a **bug?** 🪲 Report to: sumiet_t@quantech.org.in"
+            f"  \n• Have a **feedback?** ✍️ Write to: niranjan_d@quantech.org.in"
         )
 
 # Right Column: Booking Form
@@ -244,3 +251,5 @@ if st.button("🔄 Clear Cache"):
     st.success("All caches cleared. Refreshing the page...")
     time.sleep(3)
     st.rerun()
+
+# endregion

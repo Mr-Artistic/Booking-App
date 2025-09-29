@@ -99,7 +99,7 @@ with st.spinner("Loading bookings…"):
 
 # endregion
 
-# region Chapter 6: App Layout (2 Columns)
+# region Chapter 6: Bookings Timline, App Layout (2 Columns)
 left_col, right_col = st.columns([2, 1], gap="small")
 with left_col:
 
@@ -135,6 +135,8 @@ with left_col:
             else:
                 st.info("No data to show.")
 
+    # Table Dataframe
+
     st.subheader("📌 All Existing Bookings")
     if not df.empty:
         st.dataframe(
@@ -157,6 +159,8 @@ with left_col:
         )
     else:
         st.info("No bookings to show in the table yet.")
+
+    # Tip section
 
     container = st.container(border=False)
     with container:
@@ -186,3 +190,5 @@ if st.button("🔄 Clear Cache"):
     st.success("All caches cleared. Refreshing the page...")
     time.sleep(3)
     st.rerun()
+
+# endregion

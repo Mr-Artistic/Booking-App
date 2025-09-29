@@ -487,7 +487,7 @@ def booking_form():
                     body = (
                         f"Hello {person_name},\n\n"
                         f"Your booking for {conference_type} conference room has been confirmed.\n\n"
-                        f"Date: {booking_date}\n"
+                        f"Date (YYYY/MM/DD): {booking_date}\n"
                         f"From: {start_time}\n"
                         f"To: {end_time}\n"
                         f"Company: {company_name}\n"

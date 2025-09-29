@@ -31,38 +31,8 @@ CC_EMAILS = st.secrets[
 ]  # must contain at least two email addresses"
 
 
-# Resource config
+# Resources
 
-resource_list = [
-    "3D Printer(FDM)",
-    "3D Printer(SLA)",
-    "Digital Microscope",
-    "Electronics Test Bench",
-    "High-end Workstation",
-    "iMAC",
-    "PCB Prototyping Machine",
-    "Solder Station",
-]
-
-resource_price_list = {
-    "3D Printer(FDM)": 0,
-    "3D Printer(SLA)": 0,
-    "Digital Microscope": 200,
-    "Electronics Test Bench": 1000,
-    "High-end Workstation": 750,
-    "iMAC": 250,
-    "PCB Prototyping Machine": 1000,
-    "Solder Station": 100,
-}
-
-
-color_map = {
-    "3D Printer(FDM)": "#1EE56A",
-    "3D Printer(SLA)": "#E51E64",
-    "Digital Microscope": "#E5B71E",
-    "Electronics Test Bench": "#1E88E5",
-    "High-end Workstation": "#E5DE1E",
-    "iMAC": "#875F0E",
-    "PCB Prototyping Machine": "#6A1EE5",
-    "Solder Station": "#E21EE5",
-}
+resource_list = st.secrets.get("resource_list")
+resource_price_list = st.secrets.get("resource_price_list")
+resource_color_map = st.secrets.get("resource_color_map")

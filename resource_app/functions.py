@@ -17,7 +17,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 # Custom Modules
 from resource_app import config as cfg
-from resource_app.config import resource_list, color_map, resource_price_list
+from resource_app.config import resource_list, resource_color_map, resource_price_list
 
 # endregion
 
@@ -66,7 +66,9 @@ def init_db():
         company_name VARCHAR(100),
         affiliation VARCHAR(100),
         email VARCHAR(100),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        payment_status VARCHAR(100),
+        payment_id VARCHAR(100)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     """
 
@@ -141,7 +143,7 @@ def get_bookings() -> pd.DataFrame:
     engine = get_engine()
     sql = """
         SELECT id, booking_date, start_time, end_time, resource_type,
-               person_name, company_name, affiliation, email, created_at
+               person_name, company_name, affiliation, email, created_at, payment_status, payment_id
         FROM resource_bookings
         ORDER BY booking_date ASC, start_time ASC, id ASC
     """
@@ -161,6 +163,8 @@ def get_bookings() -> pd.DataFrame:
                 "affiliation",
                 "email",
                 "created_at",
+                "payment_status",
+                "payment_id",
             ]
         )
 
@@ -175,6 +179,8 @@ def get_bookings() -> pd.DataFrame:
         "affiliation",
         "email",
         "created_at",
+        "payment_status",
+        "payment_id",
     ]
     for c in expected_cols:
         if c not in df.columns:
@@ -245,7 +251,7 @@ def get_bookings() -> pd.DataFrame:
 def check_conflict(booking_date, start_time, end_time, requested_resources):
     """
     Checks overlaps for the same date *only* for rows that share at least one resource.
-    - requested_resources may be a list/tuple of strings or a single comma-joined string.
+    - requested_resources may be a list of strings or a single comma-joined string.
     Returns (bool_conflict, details_or_None)
     """
     # Normalize requested_resources into a set of trimmed lowercase tokens
@@ -475,6 +481,12 @@ def booking_form():
                 if requested_start < now + timedelta(hours=18):
                     st_red_alert("Please book at least 18 hours in advance.")
                     return
+                # Validation for working hours
+                office_start = dtime(9, 0)
+                office_end = dtime(18, 0)
+                if start_time < office_start or end_time > office_end:
+                    st_red_alert("Bookings are allowed only between 09:00 - 18:00.")
+                    return
 
                 if end_time <= start_time:
                     st_red_alert("End Time must be after Start Time.")
@@ -521,16 +533,17 @@ def booking_form():
                     body = (
                         f"Hello {person_name},\n\n"
                         f"Your booking for resources has been confirmed (subject to the receipt of payment).\n\n"
-                        f"Date: {booking_date}\n"
+                        f"Date (YYYY/MM/DD): {booking_date}\n"
                         f"From: {start_time}\n"
                         f"To: {end_time}\n"
                         f"Company: {company_name}\n"
                         f"Affiliation: {affiliation}\n\n"
-                        f"Resource(s) Booked: {resource_type_str}.\n\n"
+                        f"Resources Booked: {resource_type_str}.\n\n"
                         ""
                         "Thank you!"
                         f"\n\nPrimary Contact: {cfg.PRIMARY_CONTACT}\n"
                         f"Secondary Contact: {cfg.SECONDARY_CONTACT}\n\n"
+                        f"------------------------------\n"
                         f"NOTE: Please share your payment reference number to enable us process this booking.\n"
                     )
 
@@ -573,7 +586,7 @@ def render_header_bar(
             background-color: {bg_color};
             padding: 6px 8px;
             border-radius: 8px;
-            margin: -60px 0 10px 0;
+            margin: -80px 0 10px 0;
             margin-bottom: 10px;
         ">
             <h1 style="margin: 0; color: black; font-size: 28px;">{title}</h1>
@@ -743,7 +756,7 @@ def build_vertical_day_time_timeline(df: pd.DataFrame, default_color="#E53935"):
 
     # Build one trace per resource (clean legend)
     for resource in canonical:
-        color = getattr(cfg, "color_map", {}).get(resource, default_color)
+        color = getattr(cfg, "resource_color_map", {}).get(resource, default_color)
 
         subset = df_exp[df_exp["ResourceCanonical"] == resource]
         if subset.empty:
@@ -819,13 +832,13 @@ def build_vertical_day_time_timeline(df: pd.DataFrame, default_color="#E53935"):
             automargin=True,
         ),
         margin=dict(
-            l=40, r=20, t=40, b=150
+            l=40, r=20, t=40, b=130
         ),  # <-- reserve big bottom margin for horizontal legend
         legend=dict(
             title="Resource Type",
             orientation="h",
             yanchor="top",
-            y=-0.35,  # place legend below the plot area (negative y)
+            y=-0.40,  # place legend below the plot area (negative y)
             xanchor="center",
             x=0.5,
             traceorder="normal",

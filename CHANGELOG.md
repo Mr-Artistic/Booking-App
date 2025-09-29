@@ -4,6 +4,22 @@ _added-changed-fixed_
 
 ---
 
+## 29-Sep-2025
+
+### Added:
+
+- Added custom filter for timeline view in the resource booking app.
+
+---
+
+## 26-Sep-2025
+
+### Added:
+
+- Added the codes for Resource Booking App.
+
+---
+
 ## 25-Sep-2025
 
 ### Improved:
