@@ -17,7 +17,12 @@ from sqlalchemy.exc import SQLAlchemyError
 
 # Custom Modules
 from resource_app import config as cfg
-from resource_app.config import resource_list, resource_color_map, resource_price_list
+from resource_app.config import (
+    resource_list,
+    resource_color_map,
+    resource_price_list,
+    payment_link,
+)
 
 # endregion
 
@@ -533,7 +538,7 @@ def booking_form():
                     body = (
                         f"Hello {person_name},\n\n"
                         f"Your booking for resources has been confirmed (subject to the receipt of payment).\n\n"
-                        f"Date (YYYY/MM/DD): {booking_date}\n"
+                        f"Date: {booking_date} (YYYY/MM/DD)\n"
                         f"From: {start_time}\n"
                         f"To: {end_time}\n"
                         f"Company: {company_name}\n"
@@ -543,8 +548,8 @@ def booking_form():
                         "Thank you!"
                         f"\n\nPrimary Contact: {cfg.PRIMARY_CONTACT}\n"
                         f"Secondary Contact: {cfg.SECONDARY_CONTACT}\n\n"
-                        f"------------------------------\n"
-                        f"NOTE: Please share your payment reference number to enable us process this booking.\n"
+                        f"------------------------------------------------------------\n"
+                        f"NOTE: To enable us process this booking, please pay via: {payment_link} (comment your name during payment) and share the payment reference.\n"
                     )
 
                     with st.spinner("Sending confirmation email..."):
@@ -558,7 +563,7 @@ def booking_form():
                     else:
                         st.success("Confirmation email sent.")
                     st.session_state["_flash"] = (
-                        "✅ Booking successfull, check email!<br><br>To proceed further, please pay via: linkkkkkkkkkkkkkkkkkkkkk"
+                        f"✅ Booking successfull, check email!<br><br>To proceed further, please pay via: {payment_link}"
                     )
                     st.cache_data.clear()
                     st.rerun()

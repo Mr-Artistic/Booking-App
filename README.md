@@ -12,9 +12,9 @@ This is a web app that lets users to book the company's facilities such as confe
     - The system prevents overlapping bookings for the same resource/room.
     - The booking data is stored to your database.
 
-## Prerequisites (private)
+## Prerequisites (private/ not in this source code)
 
-    - Database, email and resources configured through secrets.toml file.
+    - Database, email, resources and payment link configured through secrets.toml file.
     - User Auth configured via yaml file (requires streamlit-authenticator).
 
 ## Deployment

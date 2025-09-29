@@ -36,3 +36,7 @@ CC_EMAILS = st.secrets[
 resource_list = st.secrets.get("resource_list")
 resource_price_list = st.secrets.get("resource_price_list")
 resource_color_map = st.secrets.get("resource_color_map")
+
+# Payment
+
+payment_link = st.secrets.get("payment_link")

@@ -219,8 +219,8 @@ with left_col:
         st.info(
             f"💡 **TIP:**"
             f"  \n"
-            f"  \n• Provide a **valid email** to receive booking confirmation."
-            f"  \n• Please share your **payment reference** to enable us process the booking."
+            f"  \n• Provide a **valid email** to receive booking confirmation along with the payment link."
+            f"  \n• Once paid, please share your **payment reference** to enable us process the booking."
             f"  \n• Bookings are to be done at least **18 hours** in advance."
             f"  \n• Resources are to be booked only between **09:00 and 18:00**."
             f"  \n• Hover a **:rainbow[coloured]** bar in the graph to see the booking details."
