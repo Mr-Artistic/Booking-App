@@ -92,12 +92,13 @@ init_db()
 
 
 @st.cache_data(ttl=7 * 24 * 60 * 60)  # 1 week
-def load_bookings():
+def load_bookings(page_id: str = "resource"):
+    _ = page_id  # intentionally keep param to make cache key unique
     return get_bookings()
 
 
 with st.spinner("Loading bookings…"):
-    df = load_bookings()
+    df = load_bookings("resource")
 
 # endregion
 

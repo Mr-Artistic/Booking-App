@@ -4,6 +4,14 @@ _added-changed-fixed_
 
 ---
 
+## 30-Sep-2025
+
+### Fixed:
+
+- Cache clash issue in both the apps.
+
+---
+
 ## 29-Sep-2025
 
 ### Added:

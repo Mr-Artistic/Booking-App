@@ -90,12 +90,13 @@ init_db()
 
 
 @st.cache_data(ttl=7 * 24 * 60 * 60)  # 1 week
-def load_bookings():
+def load_bookings(page_id: str = "conference"):
+    _ = page_id  # intentionally keep param to make cache key unique
     return get_bookings()
 
 
 with st.spinner("Loading bookings…"):
-    df = load_bookings()
+    df = load_bookings("conference")
 
 # endregion
 
@@ -138,6 +139,7 @@ with left_col:
     # Table Dataframe
 
     st.subheader("📌 All Existing Bookings")
+
     if not df.empty:
         st.dataframe(
             df[
