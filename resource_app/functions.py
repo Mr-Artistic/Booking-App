@@ -73,7 +73,8 @@ def init_db():
         email VARCHAR(100),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         payment_status VARCHAR(100),
-        payment_id VARCHAR(100)
+        payment_id VARCHAR(100),
+        payment_date DATE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     """
 
@@ -148,7 +149,7 @@ def get_bookings() -> pd.DataFrame:
     engine = get_engine()
     sql = """
         SELECT id, booking_date, start_time, end_time, resource_type,
-               person_name, company_name, affiliation, email, created_at, payment_status, payment_id
+               person_name, company_name, affiliation, email, created_at, payment_status, payment_id, payment_date
         FROM resource_bookings
         ORDER BY booking_date ASC, start_time ASC, id ASC
     """
@@ -170,6 +171,7 @@ def get_bookings() -> pd.DataFrame:
                 "created_at",
                 "payment_status",
                 "payment_id",
+                "payment_date",
             ]
         )
 
@@ -186,6 +188,7 @@ def get_bookings() -> pd.DataFrame:
         "created_at",
         "payment_status",
         "payment_id",
+        "payment_date",
     ]
     for c in expected_cols:
         if c not in df.columns:

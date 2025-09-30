@@ -203,6 +203,7 @@ with left_col:
                     "created_at_ist",
                     "payment_status",
                     "payment_id",
+                    "payment_date",
                 ]
             ]
             .sort_values(by=["booking_date", "start_time"])
