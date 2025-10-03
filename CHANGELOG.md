@@ -4,6 +4,18 @@ _added-changed-fixed_
 
 ---
 
+## 03-Oct-2025
+
+### Added:
+
+- Lottie animations.
+
+### Fixed:
+
+- "Out of Window" comment changed from "3-months" to "30 days" for conference and "10 days" for resources app.
+
+---
+
 ## 30-Sep-2025
 
 ### Fixed:
