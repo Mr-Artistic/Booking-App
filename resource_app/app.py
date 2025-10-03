@@ -7,6 +7,7 @@ from PIL import Image
 import streamlit_authenticator as stauth
 import time
 import pandas as pd
+from streamlit_lottie import st_lottie
 
 # Custom Modules
 from resource_app import config as cfg
@@ -19,6 +20,7 @@ from resource_app.functions import (
     build_vertical_day_time_timeline,  # using cached version from below
     build_timeline_figure_cached,
     st_red_alert,
+    load_lottiefile,
 )
 
 # endregion
@@ -102,12 +104,12 @@ with st.spinner("Loading bookings…"):
 
 # endregion
 
-# region Chapter 6: Bookings Timline with custom filter
-# Left Column
+# region Chapter 6: Timeline with filter, Dataframe + Booking Form (1+1 Columns)
+
 left_col, right_col = st.columns([2, 1], gap="small")
 with left_col:
 
-    # Bordered container for the graph
+    # Left Column: Bookings Timeline
     with st.container(border=True):
         st.write("📊 Current Bookings Timeline (Date & Time)")
 
@@ -179,16 +181,18 @@ with left_col:
                 )
             elif reason == "out_of_window":
                 st.warning(
-                    f"No bookings in the 3-month window "
-                    f"[{info.get('window_start')} → {info.get('window_end')}]. "
-                    f"Data spans {info.get('min_date')} → {info.get('max_date')}."
+                    f"No bookings in the current (10-days) window."
+                    # f"[{info.get('window_start')} → {info.get('window_end')}]. "
+                )
+                st.warning(
+                    f"Data range: [{info.get('min_date')}] to [{info.get('max_date')}]."
                 )
             else:
                 st.info("No data to show.")
 
-    # Table Dataframe
-
+    # Left Column: Table Dataframe
     st.subheader("📌 All Existing Bookings")
+
     if not df.empty:
         st.dataframe(
             df[
@@ -214,26 +218,37 @@ with left_col:
     else:
         st.info("No bookings to show in the table yet.")
 
-    # Tip section
+    # Tips + Lottie (1+1 Internal Sections)
+    left_sec, right_sec = st.columns([2, 1], gap="small", vertical_alignment="top")
 
-    container = st.container(border=False)
-    with container:
+    with left_sec:
+
+        # Tips
         st.info(
             f"💡 **TIP:**"
             f"  \n"
-            f"  \n• Provide a **valid email** to receive booking confirmation along with the payment link."
-            f"  \n• Once paid, please share your **payment reference** to enable us process the booking."
+            f"  \n• Provide **valid email** to get booking confirmation & payment link."
+            f"  \n• Please share **payment reference** to enable us process booking."
             f"  \n• Bookings are to be done at least **18 hours** in advance."
             f"  \n• Resources are to be booked only between **09:00 and 18:00**."
             f"  \n• Hover a **:rainbow[coloured]** bar in the graph to see the booking details."
             f"  \n• Use the table's **search tool** to search for a booking instance."
-            f"  \n• Best viewed on a **computer**. :computer:"
+            f"  \n• Best viewed on a **wide screen**. :computer:"
             f"  \n• Found a **bug?** 🪲 Report to: sumiet_t@quantech.org.in"
             f"  \n• Have a **feedback?** ✍️ Write to: niranjan_d@quantech.org.in"
         )
 
+    with right_sec:
+
+        # Lottie Animation
+        with st.container(border=False):
+            lottie_animation = load_lottiefile("assets/resource_lottie.json")
+            if lottie_animation:
+                st_lottie(lottie_animation, speed=1, height=300, key="resource")
+
 # Right Column: Booking Form
 with right_col:
+
     booking_form()
     if "_flash" in st.session_state:
         flash_message = st.session_state.pop("_flash")

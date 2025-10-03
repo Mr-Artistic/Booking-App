@@ -7,8 +7,9 @@ import tempfile, os
 import re
 import smtplib
 import datetime as _dt
-from io import StringIO
+import json
 
+from io import StringIO
 from datetime import datetime, timedelta, date, time as dtime
 from pathlib import Path
 from email.mime.text import MIMEText
@@ -783,6 +784,22 @@ def send_email(to_email, subject, body):
     except Exception as e:
         print("Email sending failed:", e)
         return False
+
+
+# endregion
+
+# region Chapter 14: Lottie Animation function
+
+
+@st.cache_data(ttl=7 * 24 * 60 * 60)  # 1 week
+def load_lottiefile(filepath: str, page_id: str = "conference"):
+    _ = page_id  # intentionally keep param to make cache key unique
+    try:
+        with open(filepath, "r", encoding="utf-8") as file:
+            return json.load(file)
+    except Exception as e:
+        st.error(f"Error loading local Lottie file: {e}")
+        return None
 
 
 # endregion
