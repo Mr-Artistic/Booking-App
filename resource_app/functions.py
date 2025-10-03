@@ -449,7 +449,7 @@ def st_red_alert(msg: str):
 def booking_form():
     st.subheader(":red[**👉 Book a Resource**]")
     with st.form("booking_form"):
-        with st.popover("Check Pricing (per hour)"):
+        with st.popover("Check Pricing ₹ (per hour)"):
             st.write(resource_price_list)
         booking_date = st.date_input("Booking Date*")
         start_time = st.time_input("Start Time*")

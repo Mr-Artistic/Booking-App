@@ -536,7 +536,7 @@ def render_header_bar(
             background-color: {bg_color};
             padding: 6px 8px;
             border-radius: 8px;
-            margin: -60px 0 10px 0;
+            margin: -40px 0 10px 0;
             margin-bottom: 10px;
         ">
             <h1 style="margin: 0; color: black; font-size: 28px;">{title}</h1>
@@ -715,7 +715,7 @@ def build_vertical_day_time_timeline(df: pd.DataFrame, default_color="#E53935"):
         y=1,
         xref="x",
         yref="paper",
-        text="Today",
+        text="Now",
         showarrow=False,
         font=dict(color=cfg.LINE_COLOR),
         yanchor="bottom",
