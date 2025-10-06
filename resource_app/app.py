@@ -8,6 +8,9 @@ import streamlit_authenticator as stauth
 import time
 import pandas as pd
 from streamlit_lottie import st_lottie
+import plotly.graph_objects as go
+from datetime import datetime
+
 
 # Custom Modules
 from resource_app import config as cfg
@@ -170,7 +173,30 @@ with left_col:
         fig, info = build_timeline_figure_cached(nrows, max_created, df_json)
 
         if fig is not None:
-            st.plotly_chart(fig, use_container_width=True)
+            # creates a fresh display copy so cached figure object is left intact
+            fig_display = go.Figure(fig)
+
+            # Adds a live "Now" marker
+            now_dt = datetime.now()
+            fig_display.add_vline(
+                x=now_dt,
+                line_width=1,
+                line_dash=cfg.LINE_STYLE,
+                line_color=cfg.LINE_COLOR,
+            )
+            fig_display.add_annotation(
+                x=now_dt,
+                y=1,
+                xref="x",
+                yref="paper",
+                text="Now",
+                showarrow=False,
+                font=dict(color=cfg.LINE_COLOR),
+                yanchor="bottom",
+            )
+
+            st.plotly_chart(fig_display, use_container_width=True)
+
         else:
             reason = (info or {}).get("reason")
             if reason == "empty_df":

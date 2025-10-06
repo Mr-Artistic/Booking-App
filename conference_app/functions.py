@@ -705,22 +705,6 @@ def build_vertical_day_time_timeline(df: pd.DataFrame, default_color="#E53935"):
         ),
     )
 
-    # Today marker
-    now_dt = datetime.now()
-    fig.add_vline(
-        x=now_dt, line_width=1, line_dash=cfg.LINE_STYLE, line_color=cfg.LINE_COLOR
-    )
-    fig.add_annotation(
-        x=now_dt,
-        y=1,
-        xref="x",
-        yref="paper",
-        text="Now",
-        showarrow=False,
-        font=dict(color=cfg.LINE_COLOR),
-        yanchor="bottom",
-    )
-
     return fig, {
         "reason": "ok",
         "rows_plotted": int(len(dfw)),

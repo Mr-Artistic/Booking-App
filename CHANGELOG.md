@@ -2,6 +2,18 @@
 
 _added-changed-fixed_
 
+## 06-Oct-2025
+
+### Fixed:
+
+- Now marker freeze in the timeline graph due to the cache.
+
+# Added:
+
+- Project-folder hierarchy information in the README.md.
+
+---
+
 ---
 
 ## 03-Oct-2025
