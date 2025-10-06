@@ -1,6 +1,6 @@
 # About the App
 
-This is a web app that lets users to book the company's facilities such as conference rooms and equipment/software (resource).
+This is a web app that lets users to book the company's facilities such as conference rooms and equipment/software (resources). The app is written in Python and uses the Streamlit framework.
 
 ## App Features:
 
@@ -25,3 +25,29 @@ This is a web app that lets users to book the company's facilities such as confe
 ## App Demo (Screenshot)
 
     - See demo.png
+
+## Project-folder Hierarchy
+
+    Booking_App
+    |-- .streamlit
+    |   | # -- hidden files
+    |-- assets
+    |   |-- conference_lottie.json
+    |   |-- logo.ico
+    |   |-- logo.png
+    |   `-- resource_lottie.json
+    |-- conference_app
+    |   |-- __init__.py
+    |   |-- app.py
+    |   |-- config.py
+    |   `-- functions.py
+    |-- resource_app
+    |   |-- __init__.py
+    |   |-- app.py
+    |   |-- config.py
+    |   `-- functions.py
+    |-- CHANGELOG.md
+    |-- README.md
+    |-- demo.png
+    |-- home.py
+    `-- requirements.txt
