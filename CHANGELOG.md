@@ -2,6 +2,17 @@
 
 _added-changed-fixed_
 
+---
+
+## 07-Oct-2025
+
+### Added:
+
+- "speed_test.py" for testing the code speed (result = 0.23s)"
+- speed_test.py --> speed_test.prof for visual representation.
+
+---
+
 ## 06-Oct-2025
 
 ### Fixed:
@@ -11,8 +22,6 @@ _added-changed-fixed_
 # Added:
 
 - Project-folder hierarchy information in the README.md.
-
----
 
 ---
 
