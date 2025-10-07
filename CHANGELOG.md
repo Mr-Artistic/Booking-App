@@ -11,6 +11,10 @@ _added-changed-fixed_
 - "speed_test.py" for testing the code speed (result = 0.23s)"
 - speed_test.py --> speed_test.prof for visual representation.
 
+### Fixed:
+
+- Marker (in the graph) set to "Today" instead of "Now".
+
 ---
 
 ## 06-Oct-2025

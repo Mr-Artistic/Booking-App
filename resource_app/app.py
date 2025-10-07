@@ -176,20 +176,21 @@ with left_col:
             # creates a fresh display copy so cached figure object is left intact
             fig_display = go.Figure(fig)
 
-            # Adds a live "Now" marker
+            # Adds a live "Today" marker
             now_dt = datetime.now()
+            today = now_dt.date()
             fig_display.add_vline(
-                x=now_dt,
+                x=today,
                 line_width=1,
                 line_dash=cfg.LINE_STYLE,
                 line_color=cfg.LINE_COLOR,
             )
             fig_display.add_annotation(
-                x=now_dt,
+                x=today,
                 y=1,
                 xref="x",
                 yref="paper",
-                text="Now",
+                text="Today",
                 showarrow=False,
                 font=dict(color=cfg.LINE_COLOR),
                 yanchor="bottom",
