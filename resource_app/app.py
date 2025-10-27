@@ -24,6 +24,7 @@ from resource_app.functions import (
     build_timeline_figure_cached,
     st_red_alert,
     load_lottiefile,
+    get_random_quote,
 )
 
 # endregion
@@ -295,5 +296,18 @@ if st.button("🔄 Clear Cache"):
     st.success("All caches cleared. Refreshing the page...")
     time.sleep(3)
     st.rerun()
+
+# endregion
+
+
+# region Chapter 8: Daily Quote
+
+st.divider()
+quote_data = get_random_quote()
+if quote_data:
+    st.markdown(
+        f"### 💭 **Quote of the Day!**  \n"
+        f"*\"{quote_data['content']}\"*  — **{quote_data['author']}**"
+    )
 
 # endregion

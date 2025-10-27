@@ -6,6 +6,10 @@ _added-changed-fixed_
 
 ## 27-Oct-2025
 
+### Added:
+
+- Quote of the day.
+
 ### Fixed:
 
 - Stale timeline window for start and end dates.

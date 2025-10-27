@@ -8,6 +8,7 @@ import re
 import smtplib
 import datetime as _dt
 import json
+import requests
 
 from io import StringIO
 from datetime import datetime, timedelta, date, time as dtime
@@ -783,6 +784,52 @@ def load_lottiefile(filepath: str, page_id: str = "conference"):
             return json.load(file)
     except Exception as e:
         st.error(f"Error loading local Lottie file: {e}")
+        return None
+
+
+# endregion
+
+
+# region Chapter 15: Random Quotes function
+
+
+@st.cache_data(ttl=24 * 60 * 60)  # Cache for 1 day
+def get_random_quote():
+    """Fetch a random quote from Quotable API"""
+    try:
+        response = requests.get(
+            "https://api.quotable.io/random?tags=technology",
+            timeout=5,
+            verify=True,  # Try with SSL verification first
+        )
+        if response.status_code == 200:
+            data = response.json()
+            return {
+                "content": data.get("content", ""),
+                "author": data.get("author", "Unknown"),
+            }
+        return None
+
+    except requests.exceptions.SSLError:
+        # Fallback: retry without SSL verification if certificate fails
+        try:
+            response = requests.get(
+                "https://api.quotable.io/random?tags=technology",
+                timeout=5,
+                verify=False,  # Disable SSL verification as fallback
+            )
+            if response.status_code == 200:
+                data = response.json()
+                return {
+                    "content": data.get("content", ""),
+                    "author": data.get("author", "Unknown"),
+                }
+        except Exception:
+            pass
+        return None
+    except Exception as e:
+        # Silently fail - don't show warning to users
+        print(f"Quote API error: {e}")
         return None
 
 
