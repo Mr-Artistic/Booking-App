@@ -3,8 +3,25 @@ from datetime import datetime, date, timedelta
 
 DB_NAME = "bookings.db"
 
-# Timeline window (last month, this month, next month)
+# Timeline window
 TODAY = date.today()
+
+
+def get_timeline_start():
+    """Returns timeline start dynamically (7 days ago at midnight)"""
+    _now = datetime.now()
+    return (_now - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+
+def get_timeline_end():
+    """Returns timeline end dynamically (21 days from now at midnight)"""
+    _now = datetime.now()
+    return (_now + timedelta(days=21)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+
+
+# Stale helper window
 _NOW = datetime.now()
 TIMELINE_START = (_NOW - timedelta(days=7)).replace(
     hour=0, minute=0, second=0, microsecond=0

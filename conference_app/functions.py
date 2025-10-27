@@ -593,8 +593,8 @@ def build_vertical_day_time_timeline(df: pd.DataFrame, default_color="#E53935"):
     df["DurH"] = df["DurH_raw"].where(df["DurH_raw"] > 0, 0.25)
 
     # Use config window (expected to be datetime objects at midnight)
-    start_window = pd.to_datetime(cfg.TIMELINE_START)
-    end_window = pd.to_datetime(cfg.TIMELINE_END)
+    start_window = pd.to_datetime(cfg.get_timeline_start())
+    end_window = pd.to_datetime(cfg.get_timeline_end())
 
     # Ensure start_window < end_window
     if pd.isna(start_window) or pd.isna(end_window) or start_window >= end_window:

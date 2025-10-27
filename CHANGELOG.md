@@ -4,6 +4,14 @@ _added-changed-fixed_
 
 ---
 
+## 27-Oct-2025
+
+### Fixed:
+
+- Stale timeline window for start and end dates.
+
+---
+
 ## 07-Oct-2025
 
 ### Added:
