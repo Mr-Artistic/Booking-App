@@ -4,6 +4,14 @@ _added-changed-fixed_
 
 ---
 
+## 01-Dec-2025
+
+### Fixed:
+
+- Timeline Bar hover dsplaying incorrect date.
+
+---
+
 ## 27-Oct-2025
 
 ### Added:
