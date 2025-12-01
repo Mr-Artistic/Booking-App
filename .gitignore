@@ -9,6 +9,7 @@ __pycache__/
 .venv/
 .streamlit/
 .backups/
+docs
 
 # Ignore VS Code settings
 .vscode/
