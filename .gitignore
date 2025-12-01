@@ -20,6 +20,7 @@ db.sqlite3
 project_tree.txt
 .mypy_cache
 *.log
+*.whl
 
 # Ignore environment variables file
 .env
