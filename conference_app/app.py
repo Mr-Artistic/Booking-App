@@ -243,6 +243,7 @@ with left_col:
             f"💡 **TIP:**"
             f"  \n"
             f"  \n• Provide **valid email** to get booking confirmation."
+            f"  \n• Need to cancel a booking? Reply to the confirmation email."
             f"  \n• Hover a **:rainbow[coloured]** bar in the graph to see the booking details."
             f"  \n• Use the table's **search tool** to search for a booking instance."
             f"  \n• Best viewed on a **wide screen**. :computer:"
