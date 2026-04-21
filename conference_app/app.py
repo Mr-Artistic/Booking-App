@@ -104,12 +104,24 @@ def load_bookings(page_id: str = "conference"):
     # Remove timezone info before caching to avoid pickle issues
     if "created_at" in df.columns and not df["created_at"].isna().all():
         try:
-            # Convert to timezone-naive UTC datetime
+            # Convert created_at to plain string BEFORE caching
+            # This avoids datetime64[ns] pickle issues across pandas versions
             df["created_at"] = pd.to_datetime(
-                df["created_at"], utc=True
-            ).dt.tz_localize(None)
+                df["created_at"], errors="coerce"
+            ).dt.strftime("%Y-%m-%d %H:%M:%S")
         except Exception as e:
-            print(f"Error removing timezone from created_at: {e}")
+            print(f"load_bookings: created_at conversion error: {e}")
+            df["created_at"] = df["created_at"].astype(str)
+
+    # Also ensure booking_date is stored as plain string for cache safety
+    if "booking_date" in df.columns:
+        try:
+            df["booking_date"] = pd.to_datetime(
+                df["booking_date"], errors="coerce"
+            ).dt.strftime("%Y-%m-%d")
+        except Exception as e:
+            print(f"load_bookings: booking_date conversion error: {e}")
+            df["booking_date"] = df["booking_date"].astype(str)
 
     return df
 

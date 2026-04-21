@@ -764,8 +764,16 @@ def build_timeline_figure_cached(n_rows: int, max_created_at: str, df_json: str)
     - df_json: small JSON serialization of the dataframe (orient='split' recommended).
     """
     try:
-        # Recreate DataFrame (orient='split')
-        df = pd.read_json(StringIO(df_json), orient="split")
+        # convert_dates=False prevents pd.read_json from auto-converting
+        # ISO date strings with UTC offset, which was shifting booking_date by 1 day
+        df = pd.read_json(StringIO(df_json), orient="split", convert_dates=False)
+
+        # Explicitly parse booking_date as date-only (no timezone involved)
+        if "booking_date" in df.columns:
+            df["booking_date"] = pd.to_datetime(
+                df["booking_date"], errors="coerce"
+            ).dt.date
+
     except Exception as e:
         # If reconstruction fails, pass None so plotting function can handle it
         print("build_timeline_figure_cached: failed to read df_json:", e)
